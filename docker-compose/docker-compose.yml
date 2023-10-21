@@ -62,6 +62,7 @@ services:
   #fluentd
   fluentd:
     image: fluentd_es:v1
+#    image: fluent/fluentd:v1.16-debian-1
     container_name: fluentd
     restart: always
     environment:
