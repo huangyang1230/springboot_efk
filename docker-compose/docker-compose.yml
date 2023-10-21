@@ -1,0 +1,80 @@
+version: "3.8"
+
+#网络配置
+networks:
+  network:
+    ipam:
+      config:
+        - subnet: "10.10.10.0/24"
+
+#服务配置
+services:
+  #es服务
+  elasticsearch:
+    image: elasticsearch:7.14.0
+    container_name: es
+    privileged: true
+    environment:
+      ES_JAVA_OPTS: -Xms1g -Xmx1g
+      node.name: es-single
+      cluster.name: es-cluster
+      discovery.type: single-node
+      # 开启es跨域
+      http.cors.enabled: "true"
+      http.cors.allow-origin: "*"
+      http.cors.allow-headers: Authorization
+      # 安全控制（根据个人需要选择打开或关闭）
+      xpack.security.enabled: "true"
+      xpack.security.transport.ssl.enabled: "true"
+      ELASTIC_PASSWORD: "B6P0hW7x"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./es/data:/usr/share/elasticsearch/data
+      - ./es/plugins:/usr/share/elasticsearch/plugins
+      - ./es/logs:/usr/share/elasticsearch/logs
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    ## 指定ip
+    networks:
+      network:
+        ipv4_address: 10.10.10.100
+  #kibana
+  kibana:
+    image: kibana:7.14.0
+    restart: always
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://192.168.0.110:9200"]'
+      ELASTICSEARCH_USERNAME: 'elastic'
+      ELASTICSEARCH_PASSWORD: 'B6P0hW7x'
+    ## 指定ip
+    networks:
+      network:
+        ipv4_address: 10.10.10.120
+  #fluentd
+  fluentd:
+    image: fluentd_es:v1
+    container_name: fluentd
+    restart: always
+    environment:
+      TZ: "Asia/Shanghai"
+    volumes:
+      - ./fluentd:/fluentd/etc
+      #对应logback输出路径
+      - /Users/ocean/Downloads/logs:/usr/local/logs
+    depends_on:
+      - elasticsearch
+    ## 指定ip
+    networks:
+      network:
+        ipv4_address: 10.10.10.130
+
+
